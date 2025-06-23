@@ -1,0 +1,20 @@
+# 編譯出來的執行檔
+todo
+*.out
+*.exe
+
+# 物件檔
+*.o
+
+# 暫存檔
+*.log
+*.tmp
+
+# VSCode 或其他 IDE 設定檔
+.vscode/
+.idea/
+
+# macOS 的垃圾檔
+.DS_Store
+
+*.txt
