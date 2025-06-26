@@ -17,7 +17,24 @@ void add_todo(const char *title) {
         perror("無法開啟檔案");
         exit(1);
     }
-
+    if (strlen(title) == 0) {
+        printf("❌ 代辦事項標題不能為空。\n");
+        fclose(file);
+        return;
+    }
+    if (strlen(title) > MAX_TITLE_LEN - 1) {
+        printf("❌ 代辦事項標題過長，請限制在 %d 字元以內。\n", MAX_TITLE_LEN - 1);
+        fclose(file);
+        return;
+    }
+    // 中文怎辦阿阿
+    for (int i = 0; i < strlen(title); i++) {
+        if (title[i] == '|' || title[i] == '\n') {
+            printf("❌ 代辦事項標題不能包含 '|' 或 '\n' 字元。\n");
+            fclose(file);
+            return;
+        }
+    }
     // new id
     int id = 1;
     FILE *read_file = fopen(TODO_FILE, "r");
@@ -30,6 +47,49 @@ void add_todo(const char *title) {
     fprintf(file, "%d|%s|0\n", id, title);
     fclose(file);
     printf("✅ 已新增：%s\n", title);
+}
+
+void delete_todo(const char *id) {
+    FILE *file = fopen(TODO_FILE, "r");
+    if (!file) {
+        perror("❌ 無法開啟檔案");
+        exit(1);
+    }
+
+    // read all
+    char lines[100][256];
+    int index = atoi(id);
+    int count = 0;
+    while (fgets(lines[count], sizeof(lines[0]), file)) {
+        count++;
+    }
+    fclose(file);
+    
+    if (index > count) {
+        printf("❌ 數字超出資料範圍。\n");
+        exit(1);
+    }
+    // write to file and modify id
+    file = fopen(TODO_FILE, "w");
+    char buffer[512];
+    int num = 1;
+    for (int i = 0; i < count; ++i) {
+        if (i == index - 1) continue;
+        TodoItem item;
+        char *token = strtok(lines[i], "|");
+        item.id = num;
+
+        token = strtok(NULL, "|");
+        if (token) strncpy(item.title, token, MAX_TITLE_LEN);
+
+        token = strtok(NULL, "|");
+        if (token) item.done = atoi(token);
+
+        fprintf(file, "%d|%s|%d\n", item.id, item.title, item.done);
+        num++;
+    }
+    fclose(file);
+    printf("✅ 已刪除：%s", lines[index - 1]);
 }
 
 void list_todos() {
@@ -65,6 +125,8 @@ int main(int argc, char *argv[]) {
 
     if (strcmp(argv[1], "add") == 0 && argc >=3) {
         add_todo(argv[2]);
+    } else if (strcmp(argv[1], "remove") == 0 && argc >= 3) {
+        delete_todo(argv[2]);
     } else if (strcmp(argv[1], "list") == 0) {
         list_todos();
     } else {

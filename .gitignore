@@ -1,5 +1,6 @@
 # 編譯出來的執行檔
 todo
+main
 *.out
 *.exe
 
@@ -18,3 +19,4 @@ todo
 .DS_Store
 
 *.txt
+test*
