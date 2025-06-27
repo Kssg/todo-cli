@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_ITEMS 100
 #define MAX_TITLE_LEN 256
 #define TODO_FILE "todo.txt"
 
@@ -56,28 +57,41 @@ void delete_todo(const char *id) {
         exit(1);
     }
 
-    // read all
-    char lines[100][256];
-    int index = atoi(id);
+    // count items
+    char lines[MAX_ITEMS][MAX_TITLE_LEN];
     int count = 0;
     while (fgets(lines[count], sizeof(lines[0]), file)) {
-        count++;
+        if (++count >= MAX_ITEMS) {
+            printf("❌ 超出支援上限，請擴充程式邏輯。\n");
+            fclose(file);
+            exit(1);
+        }
     }
     fclose(file);
     
-    if (index > count) {
+    int index = atoi(id);
+    if (index <= 0 || index > count) {
         printf("❌ 數字超出資料範圍。\n");
         exit(1);
     }
-    // write to file and modify id
+
+    char deleted_line[MAX_TITLE_LEN];
+    strncpy(deleted_line, lines[index - 1], MAX_TITLE_LEN);
+
     file = fopen(TODO_FILE, "w");
-    char buffer[512];
+    if (!file) {
+        perror("❌ 無法寫入檔案");
+        exit(1);
+    }
+    // char buffer[512]; 我寫這幹嘛
     int num = 1;
     for (int i = 0; i < count; ++i) {
         if (i == index - 1) continue;
         TodoItem item;
+        
         char *token = strtok(lines[i], "|");
-        item.id = num;
+        item.id = num++;
+        // num 後面不會用了
 
         token = strtok(NULL, "|");
         if (token) strncpy(item.title, token, MAX_TITLE_LEN);
@@ -86,7 +100,6 @@ void delete_todo(const char *id) {
         if (token) item.done = atoi(token);
 
         fprintf(file, "%d|%s|%d\n", item.id, item.title, item.done);
-        num++;
     }
     fclose(file);
     printf("✅ 已刪除：%s", lines[index - 1]);
@@ -95,12 +108,15 @@ void delete_todo(const char *id) {
 void list_todos() {
     FILE *file = fopen(TODO_FILE, "r");
     if (!file) {
-        printf("📂 尚無代辦事項。\n");
-        return;
+        perror("📂 尚無代辦事項。\n");
+        exit(1);
     }
 
     char buffer[512];
+    int has_data = 0;
+
     while (fgets(buffer, sizeof(buffer), file)) {
+        has_data = 1;
         TodoItem item;
         char *token = strtok(buffer, "|");
         if (token) item.id = atoi(token);
@@ -115,6 +131,10 @@ void list_todos() {
     }
 
     fclose(file);
+
+    if (!has_data) {
+        printf("📂 尚無代辦事項。\n");
+    }
 }
 
 int main(int argc, char *argv[]) {
