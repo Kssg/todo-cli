@@ -10,6 +10,7 @@ main
 # 暫存檔
 *.log
 *.tmp
+*.old
 
 # VSCode 或其他 IDE 設定檔
 .vscode/
