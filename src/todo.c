@@ -1,9 +1,39 @@
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <limits.h>
 #include "todo.h"
 
-int read_all_lines(char lines[MAX_ITEMS][MAX_TITLE_LEN], const char *filename) {
-    FILE *file = fopen(filename, "r");
+void strip_newline(char *s) {
+    size_t len = strlen(s);
+    while (len > 0 && (s[len - 1] == '\n' || s[len - 1] == '\r')) {
+        s[--len] = '\0';
+    }
+}
+
+int safe_atoi(const char *str, int *out) {
+    if (!str || !*str) return 0;
+
+    char *end;
+    errno = 0;
+    long val = strtol(str, &end, 10);
+
+    if (errno != 0 || *end != '\0' || val > INT_MAX || val < INT_MIN) {
+        printf("inner if error %d \n", *end == '\0');
+        return 0;
+    }
+
+    *out = (int)val;
+    return 1;
+}
+
+const char* get_todo_filename() {
+    const char *env = getenv("TODO_FILE");
+    return env ? env : "todo.txt";
+}
+
+int read_all_lines(char lines[MAX_ITEMS][MAX_TITLE_LEN]) {
+    FILE *file = fopen(get_todo_filename(), "r");
     if (!file) {
         perror("❌ 無法開啟檔案");
         return -1;
@@ -28,16 +58,32 @@ int parse_line(const char *line, TodoItem *item) {
     strncpy(tmp, line, MAX_TITLE_LEN);
 
     char *token = strtok(tmp, "|");
-    if (!token) return -1;
-    item->id = atoi(token);
+    if (!token) {
+        fprintf(stderr, "❌ 無法解析 ID 欄位：%s\n", line);
+        return -1;
+    }
+    if (!safe_atoi(token, &item->id)) {
+        fprintf(stderr, "❌ ID 欄位格式錯誤：%s\n", token);
+        return -1;
+    }
 
     token = strtok(NULL, "|");
-    if (!token) return -1;
+    if (!token) {
+        fprintf(stderr, "❌ 無法解析 Title 欄位：%s\n", line);
+        return -1;
+    }
     strncpy(item->title, token, MAX_TITLE_LEN);
 
     token = strtok(NULL, "|");
-    if (!token) return -1;
-    item->done = atoi(token);
+    if (!token) {
+        fprintf(stderr, "❌ 無法解析 Done 欄位：%s\n", line);
+        return -1;
+    }
+    strip_newline(token);
+    if (!safe_atoi(token, &item->done)) {
+        fprintf(stderr, "❌ Done 欄位格式錯誤：%s\n", token);
+        return -1;
+    }
 
     return 0;
 }
@@ -53,7 +99,7 @@ void print_item(const TodoItem *item) {
 }
         
 void add_todo(const char *title) {
-    FILE *read_file = fopen(TODO_FILE, "r");
+    FILE *read_file = fopen(get_todo_filename(), "r");
     if (!read_file) {
         perror("無法開啟檔案");
         return;
@@ -86,7 +132,7 @@ void add_todo(const char *title) {
     }
     fclose(read_file);
 
-    FILE *file = fopen(TODO_FILE, "a");
+    FILE *file = fopen(get_todo_filename(), "a");
     if (!file) {
         perror("無法寫入檔案");
         return;
@@ -98,11 +144,11 @@ void add_todo(const char *title) {
 
 void delete_todo(const char *index_str) {
     char lines[MAX_ITEMS][MAX_TITLE_LEN];
-    int count = read_all_lines(lines, TODO_FILE);
+    int count = read_all_lines(lines);
 
     // check range 
-    int index = atoi(index_str);    // fix
-    if (index <= 0 || index > count) {
+    int index;
+    if (!safe_atoi(index_str, &index) || index <= 0 || index > count) {
         fprintf(stderr, "❌ 數字超出資料範圍。\n");
         return;
     }
@@ -128,7 +174,7 @@ void delete_todo(const char *index_str) {
         items[new_count++] = item;
     }
 
-    FILE *file = fopen(TODO_FILE, "w");
+    FILE *file = fopen(get_todo_filename(), "w");
     if (!file) {
         perror("❌ 無法寫入檔案");
         return;
@@ -142,11 +188,11 @@ void delete_todo(const char *index_str) {
 
 void done_todo(const char *id) {
     char lines[MAX_ITEMS][MAX_TITLE_LEN];
-    int count = read_all_lines(lines, TODO_FILE);
+    int count = read_all_lines(lines);
 
     // 檢查 index 超出範圍
-    int index = atoi(id);   // fix: atoi not safe
-    if (index <= 0 || index > count) {
+    int index;
+    if (!safe_atoi(id, &index) || index <= 0 || index > count) {
         fprintf(stderr, "❌ 數字超出資料範圍。\n");
         return;
     }
@@ -168,7 +214,7 @@ void done_todo(const char *id) {
 
     items[index - 1].done = 1;
 
-    FILE *file = fopen(TODO_FILE, "w");
+    FILE *file = fopen(get_todo_filename(), "w");
     if (!file) {
         perror("❌ 無法寫入檔案");
         return;
@@ -181,7 +227,7 @@ void done_todo(const char *id) {
 }
 
 void list_todos() {
-    FILE *file = fopen(TODO_FILE, "r");
+    FILE *file = fopen(get_todo_filename(), "r");
     if (!file) {
         perror("📂 尚無代辦事項。\n");
         return;
