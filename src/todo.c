@@ -1,8 +1,18 @@
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-#include <limits.h>
+#include <errno.h> // for errno
+#include <limits.h> // for INT_MAX
 #include "todo.h"
+
+void init_todo_file() {
+    const char *fname = get_todo_filename();
+    FILE *fp = fopen(fname, "a");
+    if (!fp) {
+        fprintf(stderr, "無法建立 %s: %s\n", fname, strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    fclose(fp);
+}
 
 void strip_newline(char *s) {
     size_t len = strlen(s);
@@ -229,7 +239,7 @@ void done_todo(const char *id) {
 void list_todos() {
     FILE *file = fopen(get_todo_filename(), "r");
     if (!file) {
-        perror("📂 尚無代辦事項。\n");
+        perror("📂 尚無代辦事項");
         return;
     }
 

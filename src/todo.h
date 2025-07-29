@@ -18,6 +18,7 @@ void done_todo(const char *id);
 void list_todos(void);
 
 // utils
+void init_todo_file();
 void strip_newline(char *s);
 int safe_atoi(const char *str, int *out);
 const char* get_todo_filename();

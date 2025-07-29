@@ -1,16 +1,19 @@
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include "todo.h"
 
 void print_usage() {
-    printf("📋 使用方法：\n");
-    printf("  todo add \"代辦事項\"\n");
-    printf("  todo list\n");
-    printf("  todo done <id>\n");
-    printf("  todo delete <id>\n");
+    printf("📋 使用方法（可使用子命令或選項）：\n\n");
+    printf("  todo add \"代辦事項\"        或    todo -a \"代辦事項\"\n");
+    printf("  todo list                  或    todo -l\n");
+    printf("  todo done <id>            或    todo -m <id>\n");
+    printf("  todo delete <id>          或    todo -d <id>\n");
 }
 
 int main(int argc, char *argv[]) {
+    init_todo_file();
+
     if (argc < 2) {
         print_usage();
         return 1;
@@ -40,8 +43,33 @@ int main(int argc, char *argv[]) {
         }
         delete_todo(argv[2]);
 
+    } else if (argv[1][0] == '-') {
+        int opt;
+        while ((opt = getopt(argc, argv, "a:d:lm:h")) != -1) {
+            switch (opt) {
+                case 'a':
+                    add_todo(optarg);
+                    break;
+                case 'd':
+                    delete_todo(optarg);
+                    break;
+                case 'l':
+                    list_todos();
+                    break;
+                case 'm':
+                    done_todo(optarg);
+                    break;
+                case 'h':
+                    print_usage();
+                    break;
+                default:
+                    print_usage();
+                    return 1;
+            }
+        }
     } else {
         fprintf(stderr, "❌ 無效的指令:%s\n", argv[1]);
+        print_usage();
         return 1;
     }
 
