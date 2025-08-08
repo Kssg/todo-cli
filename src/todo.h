@@ -23,7 +23,7 @@ void init_todo_file(void);
 void strip_newline(char *s);
 int safe_atoi(const char *str, int *out);
 const char* get_todo_filename();
-int read_all_lines(char lines[MAX_ITEMS][MAX_TITLE_LEN]);
+int read_all_lines(char lines[MAX_ITEMS][MAX_TITLE_LEN], const char *filename);
 int parse_line(const char *line, TodoItem *item);
 void write_all_items(FILE *file, TodoItem items[], int count);
 void print_item(const TodoItem *item);

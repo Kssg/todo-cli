@@ -45,8 +45,8 @@ int safe_atoi(const char *str, int *out) {
     return 1;
 }
 
-int read_all_lines(char lines[MAX_ITEMS][MAX_TITLE_LEN]) {
-    FILE *file = fopen(get_todo_filename(), "r");
+int read_all_lines(char lines[MAX_ITEMS][MAX_TITLE_LEN], const char *filename) {
+    FILE *file = fopen(filename, "r");
     if (!file) {
         perror("❌ 無法開啟檔案");
         return -1;
@@ -157,7 +157,7 @@ void add_todo(const char *title) {
 
 void delete_todo(const char *index_str) {
     char lines[MAX_ITEMS][MAX_TITLE_LEN];
-    int count = read_all_lines(lines);
+    int count = read_all_lines(lines, get_todo_filename());
 
     // check range 
     int index;
@@ -201,7 +201,7 @@ void delete_todo(const char *index_str) {
 
 void done_todo(const char *id) {
     char lines[MAX_ITEMS][MAX_TITLE_LEN];
-    int count = read_all_lines(lines);
+    int count = read_all_lines(lines, get_todo_filename());
 
     // 檢查 index 超出範圍
     int index;
@@ -267,7 +267,12 @@ void list_todos(void) {
 
 void clear_todos(void) {
     char lines[MAX_ITEMS][MAX_TITLE_LEN];
-    int count = read_all_lines(lines);
+    int count = read_all_lines(lines, get_todo_filename());
+
+    if (count <= 0) {
+        printf("尚無代辦事項可清除。\n");
+        return;
+    }
 
     TodoItem items[MAX_ITEMS];
     int new_count = 0;
@@ -296,8 +301,12 @@ void clear_todos(void) {
     write_all_items(file, items, new_count);
     fclose(file);
 
-    printf("清除已完成事項：\n");
-    for (int i = 0; i < deleted_count; i++) {
-        print_item(&deleted_items[i]);
+    if (deleted_count == 0) {
+        printf("📋 沒有已完成事項需要清除。\n");
+    } else {
+        printf("✅ 清除已完成事項：\n");
+        for (int i = 0; i < deleted_count; i++) {
+            print_item(&deleted_items[i]);
+        }
     } 
 }
