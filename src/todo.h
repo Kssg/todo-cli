@@ -16,9 +16,10 @@ void add_todo(const char *title);
 void delete_todo(const char *index_str);
 void done_todo(const char *id);
 void list_todos(void);
+void clear_todos(void);
 
 // utils
-void init_todo_file();
+void init_todo_file(void);
 void strip_newline(char *s);
 int safe_atoi(const char *str, int *out);
 const char* get_todo_filename();

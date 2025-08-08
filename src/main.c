@@ -5,10 +5,11 @@
 
 void print_usage() {
     printf("📋 使用方法（可使用子命令或選項）：\n\n");
-    printf("  todo add \"代辦事項\"        或    todo -a \"代辦事項\"\n");
-    printf("  todo list                  或    todo -l\n");
+    printf("  todo add \"代辦事項\"       或    todo -a \"代辦事項\"\n");
+    printf("  todo list                 或    todo -l\n");
     printf("  todo done <id>            或    todo -m <id>\n");
     printf("  todo delete <id>          或    todo -d <id>\n");
+    printf("  todo clear                或    todo -c\n");
 }
 
 int main(int argc, char *argv[]) {
@@ -43,9 +44,12 @@ int main(int argc, char *argv[]) {
         }
         delete_todo(argv[2]);
 
+    } else if (strcmp(argv[1], "clear") == 0) {
+        clear_todos();
+
     } else if (argv[1][0] == '-') {
         int opt;
-        while ((opt = getopt(argc, argv, "a:d:lm:h")) != -1) {
+        while ((opt = getopt(argc, argv, "a:d:lm:ch")) != -1) {
             switch (opt) {
                 case 'a':
                     add_todo(optarg);
@@ -58,6 +62,9 @@ int main(int argc, char *argv[]) {
                     break;
                 case 'm':
                     done_todo(optarg);
+                    break;
+                case 'c':
+                    clear_todos();
                     break;
                 case 'h':
                     print_usage();

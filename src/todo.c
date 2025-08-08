@@ -1,8 +1,16 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h> // for errno
 #include <limits.h> // for INT_MAX
 #include "todo.h"
+
+
+
+const char* get_todo_filename() {
+    const char *env = getenv("TODO_FILE");
+    return env ? env : "todo.txt";
+}
 
 void init_todo_file() {
     const char *fname = get_todo_filename();
@@ -35,11 +43,6 @@ int safe_atoi(const char *str, int *out) {
 
     *out = (int)val;
     return 1;
-}
-
-const char* get_todo_filename() {
-    const char *env = getenv("TODO_FILE");
-    return env ? env : "todo.txt";
 }
 
 int read_all_lines(char lines[MAX_ITEMS][MAX_TITLE_LEN]) {
@@ -236,10 +239,10 @@ void done_todo(const char *id) {
     printf("✅ 已完成：[%d] %s\n", items[index - 1].id, items[index - 1].title);
 }
 
-void list_todos() {
+void list_todos(void) {
     FILE *file = fopen(get_todo_filename(), "r");
     if (!file) {
-        perror("📂 尚無代辦事項");
+        perror("❌ 無法開啟代辦事項\n");
         return;
     }
 
@@ -257,7 +260,44 @@ void list_todos() {
     fclose(file);
 
     if (!has_data) {
-        fprintf(stderr, "📂 尚無代辦事項。\n");
+        fprintf(stderr, "📂 尚無代辦事項\n");
         return;
     }
+}
+
+void clear_todos(void) {
+    char lines[MAX_ITEMS][MAX_TITLE_LEN];
+    int count = read_all_lines(lines);
+
+    TodoItem items[MAX_ITEMS];
+    int new_count = 0;
+    int new_id = 1;
+
+    TodoItem deleted_items[MAX_ITEMS];
+    int deleted_count = 0;
+
+    for (int i = 0; i < count; i++) {
+        TodoItem item;
+        if (parse_line(lines[i], &item) != 0) continue;
+        if (item.done == 1) {
+            deleted_items[deleted_count++] = item;
+            continue;
+        }
+        item.id = new_id++;
+        items[new_count++] = item;
+    }
+
+    FILE *file = fopen(get_todo_filename(), "w");
+    if (!file) {
+        perror("❌ 無法寫入檔案");
+        return;
+    }
+
+    write_all_items(file, items, new_count);
+    fclose(file);
+
+    printf("清除已完成事項：\n");
+    for (int i = 0; i < deleted_count; i++) {
+        print_item(&deleted_items[i]);
+    } 
 }
