@@ -1,6 +1,9 @@
 # Todo CLI
+<h3 align="center">A simple command-line to-do list tool implemented in C.</h3>
 
-A simple command-line to-do list tool implemented in C.
+<p align="center">
+  <img src="screenshots/tdc.PNG" />
+</p>
 
 ## Features
 
