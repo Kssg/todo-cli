@@ -21,3 +21,8 @@ main
 
 *.txt
 test*
+
+# json relate
+*.json
+src/cJSON.c
+src/cJSON.h
